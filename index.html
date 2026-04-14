@@ -331,7 +331,16 @@
 
         const music = document.getElementById('bgMusic');
         const mBtn = document.getElementById('musicToggle');
+        const mIcon = document.getElementById('musicIcon');
         let fadeInterval;
+        Object.assign(mBtn.style, {
+            position: 'fixed',
+            bottom: '25px',
+            right: '25px',
+            left: 'auto',
+            top: 'auto',
+            zIndex: '1000'
+        });
 
         function fadeAudio(targetVolume, duration, callback) {
             clearInterval(fadeInterval);
@@ -352,25 +361,48 @@
         }
 
         function toggleMusic() {
-            if (music.paused) {
-                music.volume = 0; music.play();
-                fadeAudio(0.3,500); mBtn.classList.add('playing');
-            } else {
-                fadeAudio(0, 1500, () => { music.pause(); mBtn.classList.remove('playing'); });
-            }
-            haptic(15);
+            const fadeTime = 1000; // Duration of fade in milliseconds (1 second)
+                const steps = 20;      // Number of volume increments
+                const interval = fadeTime / steps;
+
+                if (music.paused) {
+                    music.volume = 0; // Start at silent
+                    music.play().then(() => {
+                        mBtn.classList.add('playing');
+                        // Smooth Fade In
+                        let fadeIn = setInterval(() => {
+                            if (music.volume < 0.4) { // Target volume 40%
+                                music.volume = Math.min(0.4, music.volume + (0.4 / steps));
+                            } else {
+                                clearInterval(fadeIn);
+                            }
+                        }, interval);
+                    }).catch(err => console.log("Play blocked"));
+                } else {
+                    // Smooth Fade Out
+                    let fadeOut = setInterval(() => {
+                        if (music.volume > 0.05) {
+                            music.volume = Math.max(0, music.volume - (0.4 / steps));
+                        } else {
+                            music.pause();
+                            music.volume = 0.4; // Reset for next time
+                            mBtn.classList.remove('playing');
+                            clearInterval(fadeOut);
+                        }
+                    }, interval);
+                }
+                haptic(15);
         }
 
         function openInv() {
             haptic(50);
             music.volume = 0; 
             music.play().then(() => {
-                fadeAudio(0.3,500);
-                mBtn.style.display = 'flex';
-                mBtn.classList.add('playing');
-            }).catch(() => {
-                // Autoplay blocked handling
-                mBtn.style.display = 'flex';
+                    music.volume = 0.4;
+                    mBtn.style.display = 'flex';
+                    mBtn.classList.add('playing');
+                }).catch(e => {
+                    mBtn.style.display = 'flex';
             });
             document.getElementById('envelope').classList.add('open');
             setTimeout(() => {

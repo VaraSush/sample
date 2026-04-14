@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vara Kumar & Sushma | Wedding Invitation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --emerald: #012e23;
+            --emerald-light: #023d2f;
+            --gold: #c5a059;
+            --gold-light: #f4e8d1;
+            --champagne: #fdfbf4;
+            --soft-text: #4a4a4a;
+            --lantern-glow: rgba(197, 160, 89, 0.8);
+            --petal-color: #8B0000;
+            --leaf-green: #014d3a; 
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        body, html { 
+            height: 100%; width: 100%;
+            font-family: 'Montserrat', sans-serif; 
+            overflow: hidden;
+            background: radial-gradient(circle at center, var(--emerald-light), var(--emerald));
+        }
+
+        /* Scrollbar Styling for the Invitation Card */
+        .card::-webkit-scrollbar { width: 5px; }
+        .card::-webkit-scrollbar-track { background: rgba(197, 160, 89, 0.05); margin: 20px 0; }
+        .card::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 10px; }
+        .card { scrollbar-width: thin; scrollbar-color: var(--gold) rgba(197, 160, 89, 0.05); }
+
+        /* Background Lantern Animation */
+        #lantern-field { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+        .lantern {
+            position: absolute; background: var(--lantern-glow);
+            border-radius: 50%; box-shadow: 0 0 15px 5px rgba(197, 160, 89, 0.6);
+            bottom: -50px; animation: floatUp linear infinite;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: 0.8; }
+            90% { opacity: 0.8; }
+            100% { transform: translateY(-120dvh) translateX(50px); opacity: 0; }
+        }
+
+        /* Petal Rain Animation */
+        #petal-container { position: fixed; inset: 0; z-index: 99; pointer-events: none; }
+        .petal {
+            position: absolute; top: -10%; width: 16px; height: 18px;
+            background: var(--petal-color); border-radius: 150% 10% 150% 10%;
+            box-shadow: inset 2px -2px 5px rgba(0,0,0,0.3); opacity: 0;
+        }
+
+        /* Music Control UI */
+        .music-control {
+            position: fixed; top: 20px; right: 20px; z-index: 100;
+            width: 40px; height: 40px; background: rgba(1, 46, 35, 0.8);
+            border: 1px solid var(--gold); border-radius: 50%;
+            display: none; align-items: center; justify-content: center;
+            cursor: pointer; box-shadow: 0 0 15px rgba(197, 160, 89, 0.3);
+        }
+        .music-control.playing { animation: pulse-gold 2s infinite; }
+        @keyframes pulse-gold { 
+            0% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0.7); } 
+            70% { box-shadow: 0 0 0 10px rgba(197, 160, 89, 0); } 
+            100% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0); } 
+        }
+
+        .wrapper { position: fixed; inset: 0; display: flex; justify-content: center; align-items: center; z-index: 10; padding: 20px; }
+
+        /* Envelope Styling */
+        .envelope {
+            position: relative; width: 95%; max-width: 500px; height: 340px; 
+            background-color: #01362a;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%239C92AC' fill-opacity='0.1' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E");
+            box-shadow: 0 0 50px rgba(197, 160, 89, 0.4), 0 30px 60px rgba(0,0,0,0.5); 
+            cursor: pointer; transition: 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.1); z-index: 15;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .envelope.open { transform: translateY(120dvh) rotate(5deg); opacity: 0; pointer-events: none; }
+        .envelope-title {
+            position: absolute; top: 18%; width: 100%; text-align: center;
+            font-family: 'Great Vibes', cursive; font-size: 1.8rem; font-weight: 300;
+            color: #ffffff; text-shadow: 0 1px 4px rgba(0,0,0,0.4); z-index: 5;
+        }
+        .envelope-flap {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 0%, var(--emerald-light) 0%, var(--emerald) 70%);
+            clip-path: polygon(0 0, 50% 55%, 100% 0); z-index: 3;
+        }
+        .seal {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 140px; height: 140px; z-index: 4; display: flex; align-items: center; justify-content: center; transition: 0.3s ease;
+        }
+        .seal img { width: 100%; height: 100%; object-fit: contain; }
+
+        /* Main Invitation Card */
+        .card {
+            position: fixed; top: 100%; left: 50%; transform: translate(-50%, 0);
+            width: 96vw; max-width: 600px; height: 92dvh; opacity: 0; visibility: hidden;
+            transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease;
+            z-index: 20; background-color: #fdfbf4;
+            background-image: url("https://www.transparenttextures.com/patterns/cream-paper.png");
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: inset 0 0 80px rgba(255,255,255,0.5), 0 20px 70px rgba(0,0,0,0.3);
+            overflow-y: auto; overflow-x: hidden; padding: 40px 5% 100px; text-align: center;
+        }
+        .card.reveal { opacity: 1; visibility: visible; top: 50%; transform: translate(-50%, -50%); }
+
+        .main-names { 
+            font-family: 'Great Vibes', cursive; font-size: clamp(3rem, 11vw, 4.5rem); 
+            margin: 35px 0 0px; padding-top: 10px; font-weight: 300; line-height: 1.4;
+            background: linear-gradient(135deg, var(--emerald) 40%, #fff 50%, var(--emerald) 60%);
+            background-size: 200% 100%; -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent; animation: foilShine 6s infinite linear;
+        }
+        @keyframes foilShine { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+        .weds-text { font-size: 1.6rem; color: var(--gold); display: block; margin: -15px 0; font-weight: 300; }
+        
+        .couple-illustration { width: 100%; max-width: 400px; margin: -15px auto 10px; overflow: hidden; }
+        .couple-illustration img { width: 100%; height: auto; display: block; image-rendering: high-quality; }
+
+        /* Scratch Card Section */
+        .scratch-box {
+            position: relative; width: 100%; max-width: 320px; height: 170px; margin: 30px auto 10px;
+            border-radius: 20px; overflow: hidden; background: #fff; box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        }
+        #scratch-canvas { position: absolute; inset: 0; z-index: 2; cursor: crosshair; width: 100%; height: 100%; }
+        .revealed-content { position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; background-color: #fff;}
+
+        #marriage-text { font-family: 'Great Vibes', cursive; font-size: 1.8rem; color: var(--emerald); margin-bottom: 5px; font-weight: 300; opacity:0; transition: 1s;}
+        #wedding-date-revealed { font-family: 'Montserrat', sans-serif; font-size: 1.1rem; letter-spacing: 3px; color: var(--gold); font-weight: 600; opacity:0; transition: 1s;}
+        
+        .timer { display: flex; justify-content: center; gap: 15px; margin-top: 10px; opacity:0; transition: 1s;}
+        .timer-unit span { display: block; font-size: 1.3rem; font-weight: 300; color: var(--emerald); }
+        .timer-unit label { font-size: 0.55rem; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; }
+        .big-day-text { font-size: 0.65rem; color: var(--gold); text-transform: uppercase; letter-spacing: 3px; font-weight: 600; margin-top: 10px; opacity: 0; transition: 1s; }
+
+        #post-scratch-content { opacity: 0; display: none; transition: opacity 1.5s ease; }
+
+        /* Timeline Section */
+        .timeline-container { position: relative; max-width: 500px; margin: 30px auto 5px; padding: 0; }
+        .creeper-svg { position: absolute; left: 50%; top: 0; bottom: 0; width: 60px; height: 100%; transform: translateX(-50%); z-index: 1; }
+        #vine-path { stroke-dasharray: 1000; stroke-dashoffset: 1000; transition: stroke-dashoffset 2.5s ease-out; }
+
+        .event-row { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 20px; position: relative; z-index: 2; }
+        .event-card { 
+            width: 48%; padding: 5px; background: transparent; opacity: 0; 
+            transition: 0.9s cubic-bezier(0.17, 0.55, 0.55, 1); display: flex; flex-direction: column; align-items: center; gap: 5px;
+        }
+        .left-event { transform: translateX(-30px); text-align: center; }
+        .right-event { transform: translateX(30px); text-align: center; }
+        .event-row.is-visible .event-card { opacity: 1; transform: translateX(0); }
+        
+        .event-img { width: 50px; height: 50px; object-fit: contain; flex-shrink: 0; display: block; image-rendering: high-quality; }
+        .reception-size { width: 65px; height: 65px; } 
+
+        .sumuhurtham-rounded { border-radius: 12px; background: transparent; }
+
+        .event-content { display: flex; flex-direction: column; align-items: center; width: 100%; } 
+        .event-name { font-family: 'Great Vibes', cursive; font-size: 1.6rem; color: var(--emerald); display: block; line-height: 1.1; margin-top: 2px; }
+        .event-time { color: var(--gold); font-weight: 700; font-size: 0.7rem; letter-spacing: 1px; }
+        .spacer { width: 40%; }
+
+        /* Maps & Buttons */
+        .map-wrapper { width: 100%; max-width: 400px; margin: 20px auto; border-radius: 15px; overflow: hidden; border: 2px solid var(--gold-light); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+
+        .btn {
+            display: inline-block; margin: 8px 0; padding: 16px 30px; 
+            background: var(--emerald); color: var(--champagne); text-decoration: none; 
+            font-size: 0.75rem; letter-spacing: 2px; font-weight: 600;
+            border: none; border-radius: 60px; width: 100%; max-width: 280px;
+            position: relative; overflow: hidden; cursor: pointer; transition: 0.4s;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(1, 46, 35, 0.3); opacity: 0.9; }
+        .btn-alt { background: transparent; border: 1px solid var(--gold); color: var(--gold); }
+        .btn-alt:hover { background: var(--gold); color: var(--emerald); }
+
+        #scratch-instr { font-size: 0.75rem; color: var(--gold); font-style: italic; margin-bottom: 10px; transition: opacity 0.5s;}
+        .details-text { font-size: 0.95rem; line-height: 1.8; color: var(--soft-text); margin-top: 0px; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.05); }
+        .closing-message { margin: 60px auto 20px; font-style: italic; color: var(--soft-text); font-size: 1rem; max-width: 80%; }
+        .thank-you { font-family: 'Great Vibes', cursive; font-size: 3.2rem; color: var(--gold); margin-top: 10px; font-weight: 300; }
+    </style>
+</head>
+<body>
+
+    <audio id="bgMusic" loop preload="auto">
+        <source src="https://raw.githubusercontent.com/Vara-Kumar/wedding-invite/refs/heads/main/ar-rahman-instrumental-music-collection-night-shift-melody_jE1o0y7c.mp3" type="audio/mpeg">
+    </audio>
+
+    <div id="musicToggle" class="music-control" onclick="toggleMusic()">
+        <svg fill="var(--gold)" width="20px" height="20px" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+    </div>
+
+    <div id="lantern-field"></div>
+    <div id="petal-container"></div>
+
+    <div class="wrapper">
+        <div class="envelope" id="envelope" onclick="openInv()">
+            <div class="envelope-title">Wedding Invitation</div>
+            <div class="envelope-flap"></div>
+            <div class="seal"><img src="https://drive.google.com/thumbnail?id=1vRfNuKL5gBuVcv2mM_zaoGFG4PTfFjaw&sz=s1000" alt="Seal"></div>
+            <p style="position: absolute; bottom: 35px; width: 100%; text-align: center; color: rgba(255,255,255,0.7); font-size: 0.75rem; letter-spacing: 5px; font-weight: 600;">TAP TO OPEN</p>
+        </div>
+
+        <div class="card" id="card">
+            <div style="width: 70px; height: 70px; margin: 0 auto 5px;"><img src="https://drive.google.com/thumbnail?id=1qlH_xifYWF4L483VX8GQlibq7gTI41ss&sz=s1000" style="width:100%" alt="Ganesha"></div>
+            <div style="font-size: 0.7rem; color: var(--gold); letter-spacing: 2px; font-weight: 400; text-transform: uppercase; margin-bottom: 10px;">Om Shri Ganeshaya Namah:</div>
+            
+            <p id="guestNameDisplay" style="margin: 10px 0; color: var(--emerald); font-weight: 400;"></p>
+            
+            <div style="width: 70px; height: 70px; margin: 0 auto 20px;"><img src="https://drive.google.com/thumbnail?id=1beQfliXqIi0uLmmmbHoGIh6n1jwslWDW&sz=s1000" style="width:100%; object-fit: contain;" alt="Logo"></div>
+            
+            <p style="font-size: 0.5rem; letter-spacing: 2px; font-weight: 600; color: var(--emerald); margin: 0;">TWO HEARTS, ONE JOURNEY</p>
+            <p style="font-size: 0.8rem; letter-spacing: 2px; font-weight: 700; color: var(--emerald); margin-top: 15px;">YOU ARE CORDIALLY INVITED TO CELEBRATE</p>
+            
+            <h1 class="main-names">Vara Kumar<span class="weds-text">weds</span>Sushma</h1>
+            
+            <div class="couple-illustration">
+                <img src="https://lh3.googleusercontent.com/d/1PAbl8dJUc_PfhS534f0ih_R_U7FolFrO=w1000" alt="Vara Kumar and Sushma illustration">
+            </div>
+            
+            <div class="scratch-box">
+                <canvas id="scratch-canvas" width="320" height="170"></canvas>
+                <div class="revealed-content">
+                    <p id="marriage-text">We are getting married on!</p>
+                    <span id="wedding-date-revealed">MAY 03, 2026</span>
+                    <div class="timer" id="timer">
+                        <div class="timer-unit"><span id="days">00</span><label>Days</label></div>
+                        <div class="timer-unit"><span id="hours">00</span><label>Hrs</label></div>
+                        <div class="timer-unit"><span id="mins">00</span><label>Mins</label></div>
+                        <div class="timer-unit"><span id="seconds">00</span><label>Sec</label></div>
+                    </div>
+                    <p class="big-day-text" id="big-day-label">TO THE BIG DAY</p>
+                </div>
+            </div>
+            <p id="scratch-instr">Scratch to reveal</p>
+
+            <div id="post-scratch-content">
+                <div class="timeline-container" id="timeline">
+                    <svg class="creeper-svg" viewBox="0 0 80 435" preserveAspectRatio="none">
+                        <path id="vine-path" d="M40,0 C65,50 15,100 40,150 C65,200 15,250 40,300 C65,350 15,400 40,435" stroke="#023d2f" stroke-width="2.5" fill="none" />
+                        <text class="timeline-deco" x="40" y="25" font-size="20" fill="#c5a059" opacity="0">✿</text>
+                        <text class="timeline-deco" x="32" y="45" font-size="12" fill="var(--leaf-green)" opacity="0">🍃</text>
+                        <text class="timeline-deco" x="50" y="70" font-size="12" fill="var(--leaf-green)" opacity="0">🍃</text>
+                        <text class="timeline-deco" x="30" y="100" font-size="16" fill="#c5a059" opacity="0">✿</text>
+                        <text class="timeline-deco" x="50" y="140" font-size="12" fill="var(--leaf-green)" opacity="0">🍃</text>
+                        <text class="timeline-deco" x="35" y="170" font-size="12" fill="var(--leaf-green)" opacity="0">🍃</text>
+                        <text class="timeline-deco" x="50" y="180" font-size="18" fill="#c5a059" opacity="0">✿</text>
+                        <text class="timeline-deco" x="35" y="215" font-size="12" fill="var(--leaf-green)" opacity="0">🍃</text>
+                        <text class="timeline-deco" x="55" y="240" font-size="12" fill="var(--leaf-green)" opacity="0">🍃</text>
+                        <text class="timeline-deco" x="25" y="250" font-size="20" fill="#c5a059" opacity="0">✿</text>
+                        <text class="timeline-deco" x="45" y="290" font-size="12" fill="var(--leaf-green)" opacity="0">🍃</text>
+                        <text class="timeline-deco" x="30" y="310" font-size="12" fill="var(--leaf-green)" opacity="0">🍃</text>
+                        <text class="timeline-deco" x="55" y="320" font-size="16" fill="#c5a059" opacity="0">✿</text>
+                        <text class="timeline-deco" x="30" y="350" font-size="12" fill="var(--leaf-green)" opacity="0">🍃</text>
+                        <text class="timeline-deco" x="50" y="380" font-size="12" fill="var(--leaf-green)" opacity="0">🍃</text>
+                        <text class="timeline-deco" x="35" y="400" font-size="18" fill="#c5a059" opacity="0">✿</text>
+                        <text class="timeline-deco" x="45" y="430" font-size="12" fill="var(--leaf-green)" opacity="0">🍃</text>
+                    </svg>
+                    
+                    <div class="event-row">
+                        <div class="event-card left-event">
+                            <img src="https://drive.google.com/thumbnail?id=1mHnY71ZWjVIPOa3IlQZzn2IGKDngCEEW&sz=s1000" class="event-img reception-size" alt="Reception Icon">
+                            <div class="event-content">
+                                <span class="event-time">6:00 PM</span>
+                                <span class="event-name">Reception</span>
+                            </div>
+                        </div>
+                        <div class="spacer"></div>
+                    </div>
+
+                    <div class="event-row">
+                        <div class="spacer"></div>
+                        <div class="event-card right-event">
+                            <img src="https://drive.google.com/thumbnail?id=15i_UlZzT1ZW-DxwFt3a7SyGMRD6M9QNs&sz=s1000" class="event-img" alt="Dinner Icon">
+                            <div class="event-content">
+                                <span class="event-time">7:00 PM Onwards</span>
+                                <span class="event-name">Dinner</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="event-row">
+                        <div class="event-card left-event">
+                            <img src="https://drive.google.com/thumbnail?id=1t1AM3MV3Fr0ylAFoNg4FyQY8LhsLy6sx&sz=s1000" class="event-img sumuhurtham-rounded" alt="Sumuhurtham Icon">
+                            <div class="event-content">
+                                <span class="event-time">12:18 AM</span>
+                                <span class="event-name">Sumuhurtham</span>
+                                <small style="font-size:0.55rem; color:#484848; letter-spacing: 0.5px;">FOLLOWING DAY</small>
+                            </div>
+                        </div>
+                        <div class="spacer"></div>
+                    </div>
+                </div>
+
+                <div class="details-text">
+                    <strong style="color: var(--emerald); letter-spacing: 3px; font-size: 0.9rem;">THE CELEBRATION AT</strong><br>
+                    PVK Prime Conventions, Viswaveswara Nagar, Auto Nagar, Gajuwaka, Vizag.
+                </div>
+                <div class="map-wrapper">
+                    <iframe 
+                        src="https://maps.google.com/maps?q=PVK%20Prime%20Conventions%2C%20Gajuwaka%2C%20Visakhapatnam&t=&z=15&ie=UTF8&iwloc=&output=embed" 
+                        width="100%" height="200" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
+                    </iframe>
+                </div>
+                <div style="margin-top: 15px;">
+                    <button id="navBtn" onclick="haptic(20); navigate()" class="btn">VIEW ON MAP</button><br>
+                    <button onclick="haptic(20); saveToCalendar()" class="btn btn-alt">SAVE TO CALENDAR</button>
+                </div>
+                <div class="closing-message">We can't wait to celebrate our new beginning with you.</div>
+                <div class="thank-you">With Love</div>
+                <p style="font-size: 0.8rem; color: var(--gold); padding-bottom: 40px; letter-spacing: 3px;">#VaraKumarAndSushma</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const VENUE_COORDS = { lat: 17.6835, lng: 83.1874 }; 
+        const urlParams = new URLSearchParams(window.location.search);
+        const guest = urlParams.get('guest');
+        if (guest) document.getElementById('guestNameDisplay').innerText = `Hi ${guest}, join us for...`;
+
+        function haptic(ms) { if (navigator.vibrate) navigator.vibrate(ms); }
+
+        const music = document.getElementById('bgMusic');
+        const mBtn = document.getElementById('musicToggle');
+        let fadeInterval;
+
+        function fadeAudio(targetVolume, duration, callback) {
+            clearInterval(fadeInterval);
+            const step = 0.01;
+            const intervalTime = duration / (Math.abs(targetVolume - (music.volume || 0)) / step || 1);
+            
+            fadeInterval = setInterval(() => {
+                if (music.volume < targetVolume) {
+                    music.volume = Math.min(targetVolume, music.volume + step);
+                } else {
+                    music.volume = Math.max(targetVolume, music.volume - step);
+                }
+                if (music.volume === targetVolume) {
+                    clearInterval(fadeInterval);
+                    if (callback) callback();
+                }
+            }, intervalTime);
+        }
+
+        function toggleMusic() {
+            if (music.paused) {
+                music.volume = 0; music.play();
+                fadeAudio(0.3,500); mBtn.classList.add('playing');
+            } else {
+                fadeAudio(0, 1500, () => { music.pause(); mBtn.classList.remove('playing'); });
+            }
+            haptic(15);
+        }
+
+        function openInv() {
+            haptic(50);
+            music.volume = 0; 
+            music.play().then(() => {
+                fadeAudio(0.3,500);
+                mBtn.style.display = 'flex';
+                mBtn.classList.add('playing');
+            }).catch(() => {
+                // Autoplay blocked handling
+                mBtn.style.display = 'flex';
+            });
+            document.getElementById('envelope').classList.add('open');
+            setTimeout(() => {
+                document.getElementById('card').classList.add('reveal');
+                initScratch();
+            }, 300); 
+        }
+
+        // Initialize Background Lanterns
+        const field = document.getElementById('lantern-field');
+        for(let i=0; i<18; i++) {
+            const l = document.createElement('div');
+            l.className = 'lantern';
+            const size = Math.random() * 10 + 5;
+            l.style.width = size + 'px'; l.style.height = size + 'px';
+            l.style.left = Math.random() * 100 + 'vw';
+            l.style.animationDuration = (Math.random() * 8 + 12) + 's';
+            l.style.animationDelay = (Math.random() * 5) + 's';
+            field.appendChild(l);
+        }
+
+        function startPetalRain() {
+            const container = document.getElementById('petal-container');
+            for(let i=0; i<80; i++) {
+                setTimeout(() => {
+                    const petal = document.createElement('div');
+                    petal.className = 'petal';
+                    petal.style.left = Math.random() * 100 + 'vw';
+                    container.appendChild(petal);
+                    const duration = Math.random() * 4000 + 4000;
+                    petal.animate([
+                        { transform: `translateY(0) rotate(0deg)`, opacity: 0.8 },
+                        { transform: `translateY(110dvh) rotate(1080deg)`, opacity: 0 }
+                    ], { duration: duration, easing: 'linear' });
+                    setTimeout(() => petal.remove(), duration);
+                }, i * 120);
+            }
+        }
+
+        function navigate() {
+            const url = `https://www.google.com/maps/dir/?api=1&destination=${VENUE_COORDS.lat},${VENUE_COORDS.lng}`;
+            window.open(url, '_blank');
+        }
+
+        function saveToCalendar() {
+            const title = "Vara Kumar & Sushma Wedding";
+            const details = "We can't wait to celebrate our new beginning with you!";
+            const location = "PVK Prime Conventions, Viswaveswara Nagar, Vizag";
+            const start = "20260503T190000"; 
+            const end = "20260503T235900";   
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+            if (isAndroid) {
+                const googleUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${start}/${end}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
+                window.open(googleUrl, '_blank');
+            } else {
+                const icsData = [
+                    "BEGIN:VCALENDAR",
+                    "VERSION:2.0",
+                    "BEGIN:VEVENT",
+                    `DTSTART:${start}`,
+                    `DTEND:${end}`,
+                    `SUMMARY:${title}`,
+                    `DESCRIPTION:${details}`,
+                    `LOCATION:${location}`,
+                    "END:VEVENT",
+                    "END:VCALENDAR"
+                ].join("\n");
+                const blob = new Blob([icsData], { type: 'text/calendar;charset=utf-8' });
+                const link = document.createElement('a');
+                link.href = window.URL.createObjectURL(blob); 
+                link.setAttribute('download', 'wedding_invite.ics'); 
+                document.body.appendChild(link); 
+                link.click(); 
+                document.body.removeChild(link);
+            }
+        }
+
+        function initScratch() {
+            const canvas = document.getElementById('scratch-canvas');
+            const ctx = canvas.getContext('2d');
+            let isDrawing = false; let revealed = false;
+            
+            const metallicGradient = ctx.createLinearGradient(0, 0, 320, 170);
+            metallicGradient.addColorStop(0, '#BF953F'); 
+            metallicGradient.addColorStop(0.2, '#FCF6BA'); 
+            metallicGradient.addColorStop(0.4, '#B38728'); 
+            metallicGradient.addColorStop(0.6, '#FBF5B7'); 
+            metallicGradient.addColorStop(0.8, '#AA771C'); 
+            metallicGradient.addColorStop(1, '#D4AF37');   
+            
+            ctx.fillStyle = metallicGradient; 
+            ctx.fillRect(0, 0, 320, 170);
+
+            function scratch(e) {
+                if(!isDrawing) return;
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                const x = (clientX - rect.left) * scaleX;
+                const y = (clientY - rect.top) * scaleY;
+                
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.beginPath(); 
+                ctx.arc(x, y, 25, 0, Math.PI*2); 
+                ctx.fill();
+                if(Math.random() > 0.85) haptic(5);
+            }
+
+            function checkScratchStatus() {
+                const data = ctx.getImageData(0, 0, 320, 170).data;
+                let count = 0;
+                for (let i = 3; i < data.length; i += 4) if (data[i] === 0) count++;
+                if (count > (320 * 170 * 0.60) && !revealed) {
+                    revealed = true; 
+                    ctx.clearRect(0, 0, 320, 170);
+                    haptic([40, 30, 40]);
+                    startPetalRain(); 
+                    confetti({ particleCount: 200, spread: 80, origin: { y: 0.6 }, colors: ['#8B0000', '#D4AF37', '#FFD700', '#f4e8d1'], gravity: 1.2 });
+                    
+                    document.getElementById('marriage-text').style.opacity = '1';
+                    document.getElementById('wedding-date-revealed').style.opacity = '1';
+                    document.getElementById('timer').style.opacity = '1';
+                    document.getElementById('big-day-label').style.opacity = '1'; 
+                    document.getElementById('scratch-instr').style.opacity = '0';
+                    
+                    const postContent = document.getElementById('post-scratch-content');
+                    postContent.style.display = 'block';
+                    setTimeout(() => { 
+                        postContent.style.opacity = '1'; 
+                        initScrollAnimations(); 
+                    }, 100);
+                    startTimer();
+                }
+            }
+
+            canvas.onmousedown = () => isDrawing = true;
+            window.onmouseup = () => isDrawing = false;
+            canvas.onmousemove = (e) => { scratch(e); checkScratchStatus(); };
+            canvas.ontouchstart = (e) => { isDrawing = true; scratch(e); };
+            canvas.ontouchmove = (e) => { e.preventDefault(); scratch(e); checkScratchStatus(); };
+            canvas.ontouchend = () => isDrawing = false;
+        }
+
+        function initScrollAnimations() {
+            const vine = document.getElementById('vine-path');
+            const decos = document.querySelectorAll('.timeline-deco');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(e => { 
+                    if(e.isIntersecting) {
+                        e.target.classList.add('is-visible');
+                        vine.style.strokeDashoffset = '0';
+                        decos.forEach((d, index) => { 
+                            setTimeout(() => d.style.opacity = "1", index * 100 + 500); 
+                        });
+                        haptic(10);
+                    }
+                });
+            }, { threshold: 0.1 });
+            document.querySelectorAll('.event-row').forEach(row => observer.observe(row));
+        }
+
+        function startTimer() {
+            const target = new Date("May 3, 2026 19:00:00").getTime();
+            setInterval(() => {
+                const now = new Date().getTime();
+                const d = target - now; 
+                if (d < 0) return;
+                document.getElementById('days').innerText = String(Math.floor(d / 86400000)).padStart(2, '0');
+                document.getElementById('hours').innerText = String(Math.floor((d % 86400000) / 3600000)).padStart(2, '0');
+                document.getElementById('mins').innerText = String(Math.floor((d % 3600000) / 60000)).padStart(2, '0');
+                document.getElementById('seconds').innerText = String(Math.floor((d % 60000) / 1000)).padStart(2, '0');
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

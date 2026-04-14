@@ -28,7 +28,7 @@
             background: radial-gradient(circle at center, var(--emerald-light), var(--emerald));
         }
 
-        /* Scrollbar Styling for the Invitation Card */
+        /* Scrollbar Styling */
         .card::-webkit-scrollbar { width: 5px; }
         .card::-webkit-scrollbar-track { background: rgba(197, 160, 89, 0.05); margin: 20px 0; }
         .card::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 10px; }
@@ -56,18 +56,30 @@
             box-shadow: inset 2px -2px 5px rgba(0,0,0,0.3); opacity: 0;
         }
 
-        /* Music Control UI */
+        /* Fixed Music Control - Optimized for Mobile */
         .music-control {
-            position: fixed; top: 20px; right: 20px; z-index: 100;
-            width: 40px; height: 40px; background: rgba(1, 46, 35, 0.8);
-            border: 1px solid var(--gold); border-radius: 50%;
-            display: none; align-items: center; justify-content: center;
-            cursor: pointer; box-shadow: 0 0 15px rgba(197, 160, 89, 0.3);
+            position: fixed;
+            bottom: 30px;
+            right: 25px;
+            z-index: 1000;
+            width: 50px;
+            height: 50px;
+            background: rgba(1, 46, 35, 0.9);
+            border: 2px solid var(--gold);
+            border-radius: 50%;
+            display: none; /* Shown after envelope opens */
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            transition: transform 0.3s ease;
         }
+        .music-control:active { transform: scale(0.9); }
         .music-control.playing { animation: pulse-gold 2s infinite; }
+        
         @keyframes pulse-gold { 
             0% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0.7); } 
-            70% { box-shadow: 0 0 0 10px rgba(197, 160, 89, 0); } 
+            70% { box-shadow: 0 0 0 12px rgba(197, 160, 89, 0); } 
             100% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0); } 
         }
 
@@ -190,12 +202,14 @@
 </head>
 <body>
 
-    <audio id="bgMusic" loop preload="auto">
+    <audio id="bgMusic" loop preload="auto" playsinline>
         <source src="https://raw.githubusercontent.com/Vara-Kumar/wedding-invite/refs/heads/main/ar-rahman-instrumental-music-collection-night-shift-melody_jE1o0y7c.mp3" type="audio/mpeg">
     </audio>
 
     <div id="musicToggle" class="music-control" onclick="toggleMusic()">
-        <svg fill="var(--gold)" width="20px" height="20px" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+        <svg id="musicIcon" fill="var(--gold)" width="24px" height="24px" viewBox="0 0 24 24">
+            <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+        </svg>
     </div>
 
     <div id="lantern-field"></div>
@@ -331,79 +345,53 @@
 
         const music = document.getElementById('bgMusic');
         const mBtn = document.getElementById('musicToggle');
-        const mIcon = document.getElementById('musicIcon');
-        let fadeInterval;
-        Object.assign(mBtn.style, {
-            position: 'fixed',
-            bottom: '25px',
-            right: '25px',
-            left: 'auto',
-            top: 'auto',
-            zIndex: '1000'
-        });
-
-        function fadeAudio(targetVolume, duration, callback) {
-            clearInterval(fadeInterval);
-            const step = 0.01;
-            const intervalTime = duration / (Math.abs(targetVolume - (music.volume || 0)) / step || 1);
-            
-            fadeInterval = setInterval(() => {
-                if (music.volume < targetVolume) {
-                    music.volume = Math.min(targetVolume, music.volume + step);
-                } else {
-                    music.volume = Math.max(targetVolume, music.volume - step);
-                }
-                if (music.volume === targetVolume) {
-                    clearInterval(fadeInterval);
-                    if (callback) callback();
-                }
-            }, intervalTime);
-        }
-
+        
         function toggleMusic() {
-            const fadeTime = 1000; // Duration of fade in milliseconds (1 second)
-                const steps = 20;      // Number of volume increments
-                const interval = fadeTime / steps;
+            const steps = 20;
+            const interval = 50;
 
-                if (music.paused) {
-                    music.volume = 0; // Start at silent
-                    music.play().then(() => {
-                        mBtn.classList.add('playing');
-                        // Smooth Fade In
-                        let fadeIn = setInterval(() => {
-                            if (music.volume < 0.4) { // Target volume 40%
-                                music.volume = Math.min(0.4, music.volume + (0.4 / steps));
-                            } else {
-                                clearInterval(fadeIn);
-                            }
-                        }, interval);
-                    }).catch(err => console.log("Play blocked"));
-                } else {
-                    // Smooth Fade Out
-                    let fadeOut = setInterval(() => {
-                        if (music.volume > 0.05) {
-                            music.volume = Math.max(0, music.volume - (0.4 / steps));
+            if (music.paused) {
+                music.play().then(() => {
+                    mBtn.classList.add('playing');
+                    let vol = 0;
+                    let fadeIn = setInterval(() => {
+                        if (vol < 0.4) {
+                            vol += 0.05;
+                            music.volume = Math.min(0.4, vol);
                         } else {
-                            music.pause();
-                            music.volume = 0.4; // Reset for next time
-                            mBtn.classList.remove('playing');
-                            clearInterval(fadeOut);
+                            clearInterval(fadeIn);
                         }
                     }, interval);
-                }
-                haptic(15);
+                }).catch(err => {
+                    console.error("Playback failed:", err);
+                });
+            } else {
+                let vol = music.volume;
+                let fadeOut = setInterval(() => {
+                    if (vol > 0.05) {
+                        vol -= 0.05;
+                        music.volume = Math.max(0, vol);
+                    } else {
+                        music.pause();
+                        mBtn.classList.remove('playing');
+                        clearInterval(fadeOut);
+                    }
+                }, interval);
+            }
+            haptic(15);
         }
 
+        // Triggered by Envelope Tap - Vital for iOS
         function openInv() {
             haptic(50);
-            music.volume = 0; 
+            
+            // Critical for iOS: Start music on user interaction
+            music.volume = 0.4;
             music.play().then(() => {
-                    music.volume = 0.4;
-                    mBtn.style.display = 'flex';
-                    mBtn.classList.add('playing');
-                }).catch(e => {
-                    mBtn.style.display = 'flex';
-            });
+                mBtn.classList.add('playing');
+            }).catch(e => console.log("Auto-play blocked, waiting for manual toggle"));
+            
+            mBtn.style.display = 'flex';
             document.getElementById('envelope').classList.add('open');
             setTimeout(() => {
                 document.getElementById('card').classList.add('reveal');
@@ -454,7 +442,6 @@
             const start = "20260503T190000"; 
             const end = "20260503T235900";   
             const isAndroid = /Android/i.test(navigator.userAgent);
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
             if (isAndroid) {
                 const googleUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${start}/${end}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
